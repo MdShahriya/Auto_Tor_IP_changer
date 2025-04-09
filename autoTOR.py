@@ -48,9 +48,14 @@ try:
 except subprocess.CalledProcessError:
     print_status("Tor is not installed!", "error")
     print_status("Installing Tor...", "info")
-    subprocess.check_output('sudo apt update',shell=True)
-    subprocess.check_output('sudo apt install tor -y',shell=True)
-    print_status("Tor installed successfully", "success")
+    try:
+        subprocess.check_output('sudo apt update',shell=True)
+        subprocess.check_output('sudo apt install tor -y',shell=True)
+        print_status("Tor installed successfully", "success")
+    except subprocess.CalledProcessError as e:
+        print_status(f"Failed to install Tor: {str(e)}", "error")
+        print_status("Please install Tor manually using: sudo apt install tor", "warning")
+        sys.exit(1)
 
 # Clear screen based on OS
 def clear_screen():
@@ -66,14 +71,90 @@ def ma_ip():
     try:
         get_ip = requests.get(url, proxies=dict(http='socks5://127.0.0.1:9050',https='socks5://127.0.0.1:9050'), timeout=10)
         return get_ip.text.strip()
+    except requests.exceptions.ConnectionError:
+        return "Error: Connection refused. Tor service may not be running properly."
+    except requests.exceptions.Timeout:
+        return "Error: Connection timed out. Tor network might be slow or unreachable."
     except Exception as e:
         return f"Error: {str(e)}"
 
+def check_tor_running():
+    """Check if Tor service is running"""
+    try:
+        # Try both systemctl and service commands
+        if sys.platform.startswith('linux'):
+            try:
+                # First try systemctl (modern Linux distros including Kali)
+                result = subprocess.run(['systemctl', 'is-active', 'tor'], 
+                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                if 'active' in result.stdout:
+                    return True
+            except:
+                # Fall back to service command
+                result = subprocess.run(['service', 'tor', 'status'], 
+                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                if 'running' in result.stdout:
+                    return True
+        return False
+    except:
+        return False
+
+def start_tor_service():
+    """Start the Tor service using the appropriate command"""
+    print_status("Starting Tor service...", "info")
+    try:
+        if sys.platform.startswith('linux'):
+            # Try systemctl first (modern Linux distros including Kali)
+            try:
+                subprocess.run(['sudo', 'systemctl', 'start', 'tor'], check=True)
+            except:
+                # Fall back to service command
+                subprocess.run(['sudo', 'service', 'tor', 'start'], check=True)
+        else:
+            os.system("service tor start")
+            
+        # Verify Tor is running
+        if check_tor_running():
+            print_status("Tor service started successfully", "success")
+            return True
+        else:
+            print_status("Failed to start Tor service", "error")
+            return False
+    except Exception as e:
+        print_status(f"Error starting Tor service: {str(e)}", "error")
+        return False
+
 def change():
     print_status("Reloading Tor service...", "info")
-    os.system("service tor reload")
-    new_ip = ma_ip()
-    print_status(f"Your IP has been changed to: {new_ip}", "success")
+    try:
+        if sys.platform.startswith('linux'):
+            # Try systemctl first (modern Linux distros including Kali)
+            try:
+                subprocess.run(['sudo', 'systemctl', 'reload', 'tor'], check=True)
+            except:
+                # Fall back to service command
+                subprocess.run(['sudo', 'service', 'tor', 'reload'], check=True)
+        else:
+            os.system("service tor reload")
+            
+        # Wait a moment for Tor to establish connections
+        time.sleep(2)
+        
+        new_ip = ma_ip()
+        if new_ip.startswith("Error"):
+            print_status(f"{new_ip}", "error")
+            print_status("Attempting to restart Tor service...", "warning")
+            if start_tor_service():
+                time.sleep(3)  # Give it time to establish connections
+                new_ip = ma_ip()
+                if not new_ip.startswith("Error"):
+                    print_status(f"Your IP has been changed to: {new_ip}", "success")
+                else:
+                    print_status("Failed to connect through Tor after restart", "error")
+        else:
+            print_status(f"Your IP has been changed to: {new_ip}", "success")
+    except Exception as e:
+        print_status(f"Error changing IP: {str(e)}", "error")
 
 # Display a more visually appealing banner
 banner = fr'''{COLORS['GREEN']}
@@ -97,9 +178,11 @@ colored_print('CYAN', "Follow: http://facebook.com/ninja.hackerz.kurdish/\n")
 colored_print('CYAN', "Follow: https://x.com/TopayFoundation/\n")
 
 # Start Tor service with visual feedback
-print_status("Starting Tor service...", "info")
-os.system("service tor start")
-print_status("Tor service started successfully", "success")
+if not start_tor_service():
+    print_status("Could not start Tor service. Please check your installation.", "error")
+    print_status("Try running: sudo service tor start", "info")
+    print_status("Or: sudo systemctl start tor", "info")
+    sys.exit(1)
 
 # Loading animation
 print_status("Initializing connection", "info")
@@ -109,15 +192,23 @@ for _ in range(5):
     time.sleep(0.5)
 print("\n")
 
+# Test Tor connection
+test_ip = ma_ip()
+if test_ip.startswith("Error"):
+    print_status(f"Failed to connect through Tor: {test_ip}", "error")
+    print_status("Please check if Tor service is running correctly", "warning")
+    print_status("You can try manually restarting Tor with: sudo service tor restart", "info")
+    print_status("Or: sudo systemctl restart tor", "info")
+    sys.exit(1)
+else:
+    print_status(f"Successfully connected through Tor. Your current IP: {test_ip}", "success")
+
 # Important proxy information with better visibility
 proxy_info = f'''{COLORS['GREEN']}┌───────────────────────────────────────┐
 │ {COLORS['YELLOW']}IMPORTANT: Configure your application to │
 │ use SOCKS proxy: {COLORS['CYAN']}127.0.0.1:9050{COLORS['YELLOW']}        │
 {COLORS['GREEN']}└───────────────────────────────────────┘{COLORS['RESET']}'''
 print(proxy_info)
-
-# Ensure Tor is running
-os.system("service tor start")
 
 # Improved user input with default values and validation
 while True:
