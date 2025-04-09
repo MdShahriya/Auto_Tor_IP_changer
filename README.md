@@ -1,7 +1,7 @@
 # Auto Tor IP Changer v2.5
 
 ![Version](https://img.shields.io/badge/Version-2.5-brightgreen)
-![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-blue)
+![Platform](https://img.shields.io/badge/Platform-Linux-blue%20%7C)
 
 ## 🌐 Overview
 
