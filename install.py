@@ -33,10 +33,7 @@ def print_status(message, status_type='info'):
 
 # Clear screen based on OS
 def clear_screen():
-    if sys.platform.startswith('win'):
-        os.system('cls')
-    else:
-        os.system('clear')
+    os.system('clear')
 
 # Display a visually appealing banner
 banner = fr'''{COLORS['GREEN']}
@@ -68,14 +65,8 @@ def show_progress(message, duration=2.0):
 
 # Check if running as administrator/root
 def is_admin():
-    if sys.platform.startswith('win'):
-        try:
-            import ctypes
-            return ctypes.windll.shell32.IsUserAnAdmin() != 0
-        except:
-            return False
-    else:
-        return os.geteuid() == 0
+    # Check for root privileges on Linux
+    return os.geteuid() == 0
 
 # Main function
 def main():
@@ -88,8 +79,7 @@ def main():
         print_status("Please run this script as administrator/root", "info")
         sys.exit(1)
     
-    # Detect OS
-    is_windows = sys.platform.startswith('win')
+    # Set up for Linux
     run = os.system
     
     # Installation/Uninstallation choice
@@ -107,61 +97,28 @@ def main():
             # Installation process
             print_status("Starting installation process...", "info")
             
-            if is_windows:
-                # Windows installation
-                print_status("Installing for Windows...", "info")
-                show_progress("Setting up files", 1.5)
+            # Linux installation
+            print_status("Installing for Linux...", "info")
+            show_progress("Setting up permissions", 1)
+            run('chmod 777 autoTOR.py')
+            
+            show_progress("Creating directories", 1)
+            run('mkdir -p /usr/share/aut')
+            
+            show_progress("Copying files", 1)
+            run('cp autoTOR.py /usr/share/aut/autoTOR.py')
+            
+            show_progress("Creating executable", 1)
+            cmnd = ('#! /bin/sh\nexec python3 /usr/share/aut/autoTOR.py "$@"')
+            with open('/usr/bin/aut', 'w') as file:
+                file.write(cmnd)
                 
-                # Create program directory in AppData
-                app_dir = os.path.join(os.environ['APPDATA'], 'AutoTorIPChanger')
-                if not os.path.exists(app_dir):
-                    os.makedirs(app_dir)
-                
-                # Copy autoTOR.py to the app directory
-                current_dir = os.path.dirname(os.path.abspath(__file__))
-                autotor_path = os.path.join(current_dir, 'autoTOR.py')
-                
-                with open(autotor_path, 'r') as src_file:
-                    content = src_file.read()
-                    
-                with open(os.path.join(app_dir, 'autoTOR.py'), 'w') as dest_file:
-                    dest_file.write(content)
-                
-                # Create batch file for easy execution
-                batch_path = os.path.join(os.environ['APPDATA'], 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
-                if not os.path.exists(batch_path):
-                    os.makedirs(batch_path)
-                    
-                with open(os.path.join(batch_path, 'AutoTorIPChanger.bat'), 'w') as batch_file:
-                    batch_file.write(f'@echo off\npython "{os.path.join(app_dir, "autoTOR.py")}" %*')
-                
-                show_progress("Finalizing installation", 1)
-                print_status("Auto Tor IP Changer has been installed successfully!", "success")
-                print_status(f"You can run it from: {os.path.join(batch_path, 'AutoTorIPChanger.bat')}", "info")
-                
-            else:
-                # Linux installation
-                print_status("Installing for Linux...", "info")
-                show_progress("Setting up permissions", 1)
-                run('chmod 777 autoTOR.py')
-                
-                show_progress("Creating directories", 1)
-                run('mkdir -p /usr/share/aut')
-                
-                show_progress("Copying files", 1)
-                run('cp autoTOR.py /usr/share/aut/autoTOR.py')
-                
-                show_progress("Creating executable", 1)
-                cmnd = ('#! /bin/sh\nexec python3 /usr/share/aut/autoTOR.py "$@"')
-                with open('/usr/bin/aut', 'w') as file:
-                    file.write(cmnd)
-                    
-                show_progress("Setting permissions", 1)
-                run('chmod +x /usr/bin/aut && chmod +x /usr/share/aut/autoTOR.py')
-                
-                print_status("Auto Tor IP Changer has been installed successfully!", "success")
-                print_status("You can now run it by typing 'aut' in terminal", "info")
-                colored_print('GREEN', "\nType 'aut' in terminal to start Auto Tor IP Changer")
+            show_progress("Setting permissions", 1)
+            run('chmod +x /usr/bin/aut && chmod +x /usr/share/aut/autoTOR.py')
+            
+            print_status("Auto Tor IP Changer has been installed successfully!", "success")
+            print_status("You can now run it by typing 'aut' in terminal", "info")
+            colored_print('GREEN', "\nType 'aut' in terminal to start Auto Tor IP Changer")
             
             break
             
@@ -169,32 +126,12 @@ def main():
             # Uninstallation process
             print_status("Starting uninstallation process...", "info")
             
-            if is_windows:
-                # Windows uninstallation
-                print_status("Uninstalling from Windows...", "info")
-                app_dir = os.path.join(os.environ['APPDATA'], 'AutoTorIPChanger')
-                batch_path = os.path.join(os.environ['APPDATA'], 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', 'AutoTorIPChanger.bat')
-                
-                show_progress("Removing files", 2)
-                
-                # Remove batch file
-                if os.path.exists(batch_path):
-                    os.remove(batch_path)
-                
-                # Remove app directory
-                if os.path.exists(app_dir):
-                    import shutil
-                    shutil.rmtree(app_dir)
-                
-                print_status("Auto Tor IP Changer has been uninstalled successfully!", "success")
-                
-            else:
-                # Linux uninstallation
-                print_status("Uninstalling from Linux...", "info")
-                show_progress("Removing files", 2)
-                run('rm -r /usr/share/aut')
-                run('rm /usr/bin/aut')
-                print_status("Auto Tor IP Changer has been uninstalled successfully!", "success")
+            # Linux uninstallation
+            print_status("Uninstalling from Linux...", "info")
+            show_progress("Removing files", 2)
+            run('rm -r /usr/share/aut')
+            run('rm /usr/bin/aut')
+            print_status("Auto Tor IP Changer has been uninstalled successfully!", "success")
             
             break
             

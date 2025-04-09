@@ -1,7 +1,7 @@
 # Auto Tor IP Changer v2.5
 
 ![Version](https://img.shields.io/badge/Version-2.5-brightgreen)
-![Platform](https://img.shields.io/badge/Platform-Linux-blue%20%7C)
+![Platform](https://img.shields.io/badge/Platform-Linux-blue)
 
 ## 🌐 Overview
 
@@ -11,7 +11,7 @@ Auto Tor IP Changer is a powerful tool that automatically changes your IP addres
 
 - 🔄 Automatic IP rotation at customizable intervals
 - 🔢 Set specific number of IP changes or run in infinite mode
-- 🖥️ Cross-platform support (Linux and Windows)
+- 🖥️ platform support (Linux)
 - 📊 Visual progress tracking and status updates
 - 🔌 Easy SOCKS proxy configuration (127.0.0.1:9050)
 - 🛡️ Enhanced privacy and anonymity
