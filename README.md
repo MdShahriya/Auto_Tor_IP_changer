@@ -58,14 +58,6 @@ After installation, you can start the tool from anywhere by typing:
 aut
 ```
 
-#### Windows
-
-After installation, you can find the shortcut in your Start Menu or run it from:
-
-```
-%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\AutoTorIPChanger.bat
-```
-
 ## 🚀 Usage
 
 1. Start the tool using the appropriate command for your platform.
